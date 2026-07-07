@@ -1,0 +1,38 @@
+{
+  "name": "Shoe",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Shoe name/model"
+    },
+    "brand": {
+      "type": "string",
+      "description": "Shoe brand"
+    },
+    "total_km": {
+      "type": "number",
+      "default": 0,
+      "description": "Total kilometers on this shoe"
+    },
+    "max_km": {
+      "type": "number",
+      "default": 800,
+      "description": "Maximum recommended km"
+    },
+    "purchase_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "retired": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

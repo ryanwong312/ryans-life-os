@@ -1,0 +1,48 @@
+{
+  "name": "IBSubject",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Subject name"
+    },
+    "group": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 7,
+      "description": "IB Group number (1-6, 7 for Core)"
+    },
+    "level": {
+      "type": "string",
+      "enum": [
+        "HL",
+        "SL",
+        "Core"
+      ],
+      "description": "Higher Level, Standard Level, or Core"
+    },
+    "teacher": {
+      "type": "string"
+    },
+    "color": {
+      "type": "string",
+      "description": "Color for the subject"
+    },
+    "ia_progress": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Internal Assessment progress percentage"
+    },
+    "predicted_grade": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 7
+    }
+  },
+  "required": [
+    "name",
+    "group",
+    "level"
+  ]
+}

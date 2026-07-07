@@ -1,0 +1,45 @@
+{
+  "name": "StudySession",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "description": "Reference to IBSubject"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "description": "Study duration in minutes"
+    },
+    "topic": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "class",
+        "self_study",
+        "revision",
+        "practice",
+        "ia_work"
+      ],
+      "description": "Type of study"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "productivity_rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5
+    }
+  },
+  "required": [
+    "subject_id",
+    "date",
+    "duration_minutes"
+  ]
+}

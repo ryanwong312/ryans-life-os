@@ -1,0 +1,29 @@
+{
+  "name": "BodyMetric",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "weight_kg": {
+      "type": "number"
+    },
+    "height_cm": {
+      "type": "number"
+    },
+    "body_fat_percent": {
+      "type": "number"
+    },
+    "custom_metrics": {
+      "type": "object",
+      "description": "Custom metrics as key-value pairs"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "date"
+  ]
+}

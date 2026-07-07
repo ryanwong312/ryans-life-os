@@ -1,0 +1,39 @@
+{
+  "name": "AIConversation",
+  "type": "object",
+  "properties": {
+    "user_message": {
+      "type": "string",
+      "description": "User's message"
+    },
+    "ai_response": {
+      "type": "string",
+      "description": "AI's response"
+    },
+    "context_used": {
+      "type": "object",
+      "description": "Data AI accessed for this response"
+    },
+    "actions_taken": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Changes AI suggested or made"
+    },
+    "starred": {
+      "type": "boolean",
+      "default": false
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "user_message",
+    "ai_response"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "name": "Race",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Race name"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Race date"
+    },
+    "distance_km": {
+      "type": "number",
+      "description": "Distance in kilometers"
+    },
+    "location": {
+      "type": "string",
+      "description": "Race location"
+    },
+    "target_time": {
+      "type": "string",
+      "description": "Target finish time (HH:MM:SS)"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "A",
+        "B",
+        "C"
+      ],
+      "description": "Race priority level"
+    },
+    "result_time": {
+      "type": "string",
+      "description": "Actual finish time"
+    },
+    "result_place": {
+      "type": "string",
+      "description": "Finishing place"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Race notes and reflections"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "name",
+    "date",
+    "distance_km"
+  ]
+}

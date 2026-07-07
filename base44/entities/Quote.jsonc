@@ -1,0 +1,43 @@
+{
+  "name": "Quote",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "motivational",
+        "wisdom",
+        "academic",
+        "wellness",
+        "athletic",
+        "philosophical",
+        "humor"
+      ]
+    },
+    "context": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "When to show: morning, evening, study, running, low_mood, celebration"
+    },
+    "favorite": {
+      "type": "boolean",
+      "default": false
+    },
+    "custom": {
+      "type": "boolean",
+      "default": false,
+      "description": "User-added quote"
+    }
+  },
+  "required": [
+    "text"
+  ]
+}

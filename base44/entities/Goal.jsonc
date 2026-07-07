@@ -1,0 +1,78 @@
+{
+  "name": "Goal",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "why_it_matters": {
+      "type": "string",
+      "description": "Why this goal is important"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "academic",
+        "athletic",
+        "personal",
+        "health",
+        "creative",
+        "social",
+        "career"
+      ]
+    },
+    "target_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "progress": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed",
+        "paused",
+        "abandoned"
+      ],
+      "default": "active"
+    },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "boolean"
+          },
+          "date": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "linked_habits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "linked_race_id": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "category"
+  ]
+}

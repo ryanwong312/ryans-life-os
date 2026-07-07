@@ -1,0 +1,102 @@
+{
+  "name": "Day",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "The date for this day record"
+    },
+    "mood": {
+      "type": "string",
+      "enum": [
+        "amazing",
+        "good",
+        "okay",
+        "low",
+        "rough"
+      ],
+      "description": "Overall mood for the day"
+    },
+    "one_interesting_thing": {
+      "type": "string",
+      "description": "One interesting thing that happened today"
+    },
+    "gratitude_1": {
+      "type": "string",
+      "description": "First thing I'm grateful for today"
+    },
+    "gratitude_2": {
+      "type": "string",
+      "description": "Second thing I'm grateful for today"
+    },
+    "gratitude_3": {
+      "type": "string",
+      "description": "Third thing I'm grateful for today"
+    },
+    "journal_content": {
+      "type": "string",
+      "description": "Plain text journal content"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Photo URLs for the day"
+    },
+    "voice_notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "duration": {
+            "type": "string"
+          },
+          "transcription": {
+            "type": "string"
+          },
+          "audioUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Voice notes for the day"
+    },
+    "sleep_hours": {
+      "type": "number",
+      "description": "Hours of sleep from previous night"
+    },
+    "sleep_quality": {
+      "type": "string",
+      "enum": [
+        "excellent",
+        "good",
+        "fair",
+        "poor"
+      ],
+      "description": "Quality of sleep"
+    },
+    "bedtime": {
+      "type": "string",
+      "description": "Time went to bed"
+    },
+    "wake_time": {
+      "type": "string",
+      "description": "Time woke up"
+    },
+    "energy_level": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Energy level 1-10"
+    }
+  },
+  "required": [
+    "date"
+  ],
+  "rls": {}
+}

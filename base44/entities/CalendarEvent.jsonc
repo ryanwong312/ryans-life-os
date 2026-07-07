@@ -1,0 +1,110 @@
+{
+  "name": "CalendarEvent",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Start time (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "End time (HH:MM)"
+    },
+    "all_day": {
+      "type": "boolean",
+      "default": false
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "academic",
+        "fitness",
+        "social",
+        "personal",
+        "work"
+      ],
+      "default": "personal"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "tentative",
+        "cancelled",
+        "pending"
+      ],
+      "default": "confirmed"
+    },
+    "location": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "recurring": {
+      "type": "boolean",
+      "default": false
+    },
+    "recurring_pattern": {
+      "type": "object",
+      "properties": {
+        "frequency": {
+          "type": "string",
+          "enum": [
+            "daily",
+            "weekly",
+            "biweekly",
+            "monthly",
+            "yearly"
+          ]
+        },
+        "interval": {
+          "type": "number",
+          "default": 1
+        },
+        "days_of_week": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "0=Sunday, 1=Monday, etc."
+        },
+        "end_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "occurrences": {
+          "type": "number"
+        }
+      }
+    },
+    "recurring_parent_id": {
+      "type": "string",
+      "description": "Reference to parent recurring event"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "linked_workout_id": {
+      "type": "string"
+    },
+    "linked_assignment_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "date"
+  ],
+  "rls": {}
+}

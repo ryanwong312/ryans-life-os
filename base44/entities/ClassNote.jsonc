@@ -1,0 +1,71 @@
+{
+  "name": "ClassNote",
+  "type": "object",
+  "properties": {
+    "subject_id": {
+      "type": "string",
+      "description": "Reference to IBSubject"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "title": {
+      "type": "string",
+      "description": "Class/topic title"
+    },
+    "content": {
+      "type": "string",
+      "description": "Rich text notes content"
+    },
+    "syllabus_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Related syllabus points"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "File URLs (PDFs, images, etc.)"
+    },
+    "audio_recordings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Audio recording URLs"
+    },
+    "key_terms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tok_connections": {
+      "type": "string",
+      "description": "Theory of Knowledge connections"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "reviewed",
+        "mastered"
+      ],
+      "default": "new"
+    },
+    "next_review_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "subject_id",
+    "date",
+    "title"
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "name": "Habit",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the habit"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "build",
+        "limit"
+      ],
+      "description": "Build = do it, Limit = avoid it"
+    },
+    "description": {
+      "type": "string",
+      "description": "Description or criteria for completion"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Lucide icon name"
+    },
+    "color": {
+      "type": "string",
+      "description": "Color for the habit"
+    },
+    "order": {
+      "type": "number",
+      "description": "Display order"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "auto_track": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this habit is auto-tracked from other data"
+    },
+    "auto_track_source": {
+      "type": "string",
+      "description": "Source for auto-tracking (e.g., 'study_sessions', 'assignments')"
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

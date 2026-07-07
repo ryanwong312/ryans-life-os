@@ -1,0 +1,92 @@
+{
+  "name": "Workout",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Workout date"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "easy",
+        "tempo",
+        "intervals",
+        "hills",
+        "long",
+        "race",
+        "recovery",
+        "cross_training",
+        "rest"
+      ],
+      "description": "Workout type"
+    },
+    "planned_distance_km": {
+      "type": "number",
+      "description": "Planned distance in km"
+    },
+    "actual_distance_km": {
+      "type": "number",
+      "description": "Actual distance in km"
+    },
+    "planned_duration": {
+      "type": "string",
+      "description": "Planned duration"
+    },
+    "actual_duration": {
+      "type": "string",
+      "description": "Actual duration"
+    },
+    "pace_min_km": {
+      "type": "number",
+      "description": "Average pace in min/km"
+    },
+    "heart_rate_avg": {
+      "type": "number",
+      "description": "Average heart rate"
+    },
+    "description": {
+      "type": "string",
+      "description": "Workout description (e.g., '8x400m @ 5K pace')"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Post-workout notes with rich text"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Workout photo URLs"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "feeling": {
+      "type": "string",
+      "enum": [
+        "great",
+        "good",
+        "okay",
+        "tough",
+        "struggled"
+      ],
+      "description": "How the workout felt"
+    },
+    "shoe_id": {
+      "type": "string",
+      "description": "Reference to shoe used"
+    },
+    "race_id": {
+      "type": "string",
+      "description": "Reference to race if this is race training"
+    }
+  },
+  "required": [
+    "date",
+    "type"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "Note",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string",
+      "description": "Rich text content"
+    },
+    "whiteboard_data": {
+      "type": "object",
+      "description": "Whiteboard canvas data"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pinned": {
+      "type": "boolean",
+      "default": false
+    },
+    "folder": {
+      "type": "string",
+      "description": "Folder/category for organization"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}
