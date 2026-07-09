@@ -70,11 +70,6 @@ export default function Data() {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!confirm('This will import all data from the backup zip. Imported records will be added alongside existing ones (no data will be deleted). Continue?')) {
-      e.target.value = '';
-      return;
-    }
-
     setImporting(true);
     setImportResult(null);
     try {

@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { motion } from 'framer-motion';
 import { format, subDays } from 'date-fns';
-import { Plus, BookOpen, FileText, Clock, GraduationCap, AlertTriangle, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, BookOpen, FileText, Clock, GraduationCap, AlertTriangle, CheckCircle2, Circle, Trash2, Tag, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,8 @@ import SubjectCard from '@/components/study/SubjectCard';
 import AIStudySessionSummary from '@/components/study/AIStudySessionSummary';
 import AIAssistant from '@/components/ai/AIAssistant';
 import StatCard from '@/components/ui/StatCard';
-import StudyTimer from '@/components/study/StudyTimer';
+import StudySessionTimer from '@/components/study/StudySessionTimer';
+import StudyAnalytics from '@/components/study/StudyAnalytics';
 import QuoteDisplay from '@/components/quotes/QuoteDisplay';
 
 const ibGroups = [
@@ -40,13 +41,15 @@ export default function Study() {
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
   const [showNoteDialog, setShowNoteDialog] = useState(false);
   const [showSessionDialog, setShowSessionDialog] = useState(false);
+  const [editingSession, setEditingSession] = useState(null);
+  const [sessionTagInput, setSessionTagInput] = useState('');
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [editingSubject, setEditingSubject] = useState(null);
 
   const [subjectForm, setSubjectForm] = useState({ name: '', group: 1, level: 'HL', teacher: '', color: 'indigo', ia_progress: 0 });
   const [assignmentForm, setAssignmentForm] = useState({ subject_id: '', title: '', description: '', due_date: '', type: 'homework', priority: 'medium', status: 'not_started' });
   const [noteForm, setNoteForm] = useState({ subject_id: '', date: format(new Date(), 'yyyy-MM-dd'), title: '', content: '' });
-  const [sessionForm, setSessionForm] = useState({ subject_id: '', date: format(new Date(), 'yyyy-MM-dd'), duration_minutes: 45, topic: '', type: 'self_study', productivity_rating: 3 });
+  const [sessionForm, setSessionForm] = useState({ subject_id: '', date: format(new Date(), 'yyyy-MM-dd'), duration_minutes: 45, topic: '', name: '', type: 'self_study', productivity_rating: 3, tags: [], start_time: '', notes: '' });
 
   const { data: subjects = [] } = useQuery({ queryKey: ['subjects'], queryFn: () => db.entities.IBSubject.list('group') });
   const { data: assignments = [] } = useQuery({ queryKey: ['assignments'], queryFn: () => db.entities.Assignment.list('due_date') });
@@ -87,8 +90,82 @@ export default function Study() {
     onSuccess: () => { 
       queryClient.invalidateQueries({ queryKey: ['study-sessions'] }); 
       setShowSessionDialog(false); 
+      resetSessionForm();
     } 
   });
+  const updateSessionMutation = useMutation({
+    mutationFn: ({ id, data }) => db.entities.StudySession.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['study-sessions'] });
+      setShowSessionDialog(false);
+      resetSessionForm();
+    }
+  });
+  const deleteSessionMutation = useMutation({
+    mutationFn: (id) => db.entities.StudySession.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['study-sessions'] });
+    }
+  });
+
+  const allSessionTags = [...new Set(studySessions.flatMap(s => s.tags || []))].sort();
+
+  const resetSessionForm = () => {
+    setSessionForm({ subject_id: '', date: format(new Date(), 'yyyy-MM-dd'), duration_minutes: 45, topic: '', name: '', type: 'self_study', productivity_rating: 3, tags: [], start_time: '', notes: '' });
+    setSessionTagInput('');
+    setEditingSession(null);
+  };
+
+  const handleEditSession = (session) => {
+    setEditingSession(session);
+    setSessionForm({
+      subject_id: session.subject_id || '',
+      date: session.date || format(new Date(), 'yyyy-MM-dd'),
+      duration_minutes: session.duration_minutes || 45,
+      topic: session.topic || '',
+      name: session.name || '',
+      type: session.type || 'self_study',
+      productivity_rating: session.productivity_rating || 3,
+      tags: session.tags || [],
+      start_time: session.start_time || '',
+      notes: session.notes || '',
+    });
+    setShowSessionDialog(true);
+  };
+
+  const handleSaveSession = () => {
+    if (editingSession) {
+      updateSessionMutation.mutate({ id: editingSession.id, data: sessionForm });
+    } else {
+      createSessionMutation.mutate(sessionForm);
+    }
+  };
+
+  const addSessionTag = () => {
+    const tag = sessionTagInput.trim();
+    if (tag && !sessionForm.tags.includes(tag)) {
+      setSessionForm({ ...sessionForm, tags: [...sessionForm.tags, tag] });
+      setSessionTagInput('');
+    }
+  };
+  const removeSessionTag = (tag) => setSessionForm({ ...sessionForm, tags: sessionForm.tags.filter(t => t !== tag) });
+
+  const handleTimerComplete = (timerData) => {
+    setSessionForm({
+      subject_id: timerData.subject_id || '',
+      date: format(new Date(), 'yyyy-MM-dd'),
+      duration_minutes: timerData.duration_minutes,
+      topic: '',
+      name: '',
+      type: 'self_study',
+      productivity_rating: 3,
+      tags: [],
+      start_time: timerData.start_time || '',
+      notes: '',
+    });
+    setEditingSession(null);
+    setShowSessionDialog(true);
+  };
 
   const getSubjectName = (id) => subjects.find(s => s.id === id)?.name || 'Unknown';
 
@@ -101,7 +178,7 @@ export default function Study() {
             <p className="text-slate-400">IB Diploma Programme</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setShowSessionDialog(true)} variant="outline" className="border-slate-600 gap-2"><Clock className="w-4 h-4" />Log Session</Button>
+            <Button onClick={() => { resetSessionForm(); setShowSessionDialog(true); }} variant="outline" className="border-slate-600 gap-2"><Clock className="w-4 h-4" />Log Session</Button>
             <Button onClick={() => setShowNoteDialog(true)} variant="outline" className="border-slate-600 gap-2"><FileText className="w-4 h-4" />Add Notes</Button>
             <Button onClick={() => setShowAssignmentDialog(true)} className="bg-gradient-to-r from-indigo-500 to-purple-500 gap-2"><Plus className="w-4 h-4" />Add Assignment</Button>
           </div>
@@ -120,6 +197,7 @@ export default function Study() {
             <TabsTrigger value="assignments" className="data-[state=active]:bg-indigo-500">Assignments</TabsTrigger>
             <TabsTrigger value="notes" className="data-[state=active]:bg-indigo-500">Class Notes</TabsTrigger>
             <TabsTrigger value="sessions" className="data-[state=active]:bg-indigo-500">Study Log</TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-indigo-500"><BarChart3 className="w-4 h-4 mr-1" />Analytics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="subjects" className="mt-6">
@@ -173,19 +251,39 @@ export default function Study() {
             
             <div className="mt-6">
             <div className="space-y-3">
-              {studySessions.slice(0, 20).map(session => (
-                <motion.div key={session.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
+              {studySessions.slice(0, 50).map(session => (
+                <motion.div key={session.id} className="flex items-center justify-between p-4 rounded-xl bg-slate-800/30 border border-slate-700/50 hover:border-slate-600 cursor-pointer transition" onClick={() => handleEditSession(session)}>
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded-lg bg-indigo-500/20"><BookOpen className="w-4 h-4 text-indigo-400" /></div>
-                    <div><h3 className="font-medium text-white">{getSubjectName(session.subject_id)}</h3><p className="text-sm text-slate-400">{session.topic || session.type}</p></div>
+                    <div>
+                      <h3 className="font-medium text-white">{session.name || session.topic || getSubjectName(session.subject_id)}</h3>
+                      <p className="text-sm text-slate-400">{getSubjectName(session.subject_id)} · {session.type?.replace('_', ' ')}</p>
+                      {session.tags && session.tags.length > 0 && (
+                        <div className="flex gap-1 mt-1">
+                          {session.tags.map(tag => <span key={tag} className="px-1.5 py-0.5 text-xs rounded-full bg-purple-500/20 text-purple-300">#{tag}</span>)}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right"><p className="text-white font-medium">{session.duration_minutes} min</p><p className="text-xs text-slate-500">{format(new Date(session.date), 'MMM d')}</p></div>
+                  <div className="text-right flex items-center gap-3">
+                    <div>
+                      <p className="text-white font-medium">{session.duration_minutes} min</p>
+                      <p className="text-xs text-slate-500">{format(new Date(session.date), 'MMM d')}{session.start_time ? ` · ${session.start_time}` : ''}</p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-rose-400" onClick={(e) => { e.stopPropagation(); deleteSessionMutation.mutate(session.id); }}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </motion.div>
               ))}
-              {studySessions.length === 0 && <p className="text-slate-500 text-center py-12">No study sessions logged</p>}
+              {studySessions.length === 0 && <p className="text-slate-500 text-center py-12">No study sessions logged. Start a timer or add one manually!</p>}
               </div>
               </div>
               </TabsContent>
+
+          <TabsContent value="analytics" className="mt-6">
+            <StudyAnalytics studySessions={studySessions} subjects={subjects} />
+          </TabsContent>
         </Tabs>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -193,18 +291,7 @@ export default function Study() {
             <QuoteDisplay context="study" />
           </div>
           <div>
-            <StudyTimer onSessionComplete={(session) => {
-              if (subjects.length > 0) {
-                createSessionMutation.mutate({
-                  subject_id: subjects[0].id,
-                  date: format(new Date(), 'yyyy-MM-dd'),
-                  duration_minutes: session.duration,
-                  topic: 'Focus session',
-                  type: 'self_study',
-                  productivity_rating: 4
-                });
-              }
-            }} />
+            <StudySessionTimer subjects={subjects} onComplete={handleTimerComplete} />
           </div>
         </div>
       </div>
@@ -220,7 +307,7 @@ export default function Study() {
             </div>
             <div><Label className="text-slate-400">Teacher</Label><Input value={subjectForm.teacher} onChange={(e) => setSubjectForm({ ...subjectForm, teacher: e.target.value })} className="bg-slate-800 border-slate-700 text-white" /></div>
             <div className="flex gap-2 pt-4">
-              {editingSubject && <Button variant="destructive" onClick={() => { if (confirm('Delete this subject? All notes and assignments will remain but be unlinked.')) deleteSubjectMutation.mutate(editingSubject.id); }} className="flex-1">Delete</Button>}
+              {editingSubject && <Button variant="destructive" onClick={() => deleteSubjectMutation.mutate(editingSubject.id)} className="flex-1">Delete</Button>}
               <Button onClick={() => editingSubject ? updateSubjectMutation.mutate({ id: editingSubject.id, data: subjectForm }) : createSubjectMutation.mutate(subjectForm)} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500">{editingSubject ? 'Save Changes' : 'Add Subject'}</Button>
             </div>
           </div>
@@ -257,17 +344,46 @@ export default function Study() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showSessionDialog} onOpenChange={setShowSessionDialog}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white">
-          <DialogHeader><DialogTitle>Log Study Session</DialogTitle></DialogHeader>
+      <Dialog open={showSessionDialog} onOpenChange={(open) => { setShowSessionDialog(open); if (!open) resetSessionForm(); }}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editingSession ? 'Edit Study Session' : 'Log Study Session'}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-4">
+            <div><Label className="text-slate-400">Session Name</Label><Input value={sessionForm.name} onChange={(e) => setSessionForm({ ...sessionForm, name: e.target.value })} placeholder="e.g., Chapter 5 Review, Essay Draft" className="bg-slate-800 border-slate-700 text-white" /></div>
             <div><Label className="text-slate-400">Subject</Label><Select value={sessionForm.subject_id} onValueChange={(value) => setSessionForm({ ...sessionForm, subject_id: value })}><SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue placeholder="Select subject" /></SelectTrigger><SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label className="text-slate-400">Date</Label><Input type="date" value={sessionForm.date} onChange={(e) => setSessionForm({ ...sessionForm, date: e.target.value })} className="bg-slate-800 border-slate-700 text-white" /></div>
               <div><Label className="text-slate-400">Duration (minutes)</Label><Input type="number" value={sessionForm.duration_minutes} onChange={(e) => setSessionForm({ ...sessionForm, duration_minutes: parseInt(e.target.value) })} className="bg-slate-800 border-slate-700 text-white" /></div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label className="text-slate-400">Start Time</Label><Input type="time" value={sessionForm.start_time} onChange={(e) => setSessionForm({ ...sessionForm, start_time: e.target.value })} className="bg-slate-800 border-slate-700 text-white" /></div>
+              <div><Label className="text-slate-400">Type</Label><Select value={sessionForm.type} onValueChange={(value) => setSessionForm({ ...sessionForm, type: value })}><SelectTrigger className="bg-slate-800 border-slate-700 text-white"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="class">Class</SelectItem><SelectItem value="self_study">Self Study</SelectItem><SelectItem value="revision">Revision</SelectItem><SelectItem value="practice">Practice</SelectItem><SelectItem value="ia_work">IA Work</SelectItem></SelectContent></Select></div>
+            </div>
             <div><Label className="text-slate-400">Topic</Label><Input value={sessionForm.topic} onChange={(e) => setSessionForm({ ...sessionForm, topic: e.target.value })} placeholder="What did you study?" className="bg-slate-800 border-slate-700 text-white" /></div>
-            <Button onClick={() => createSessionMutation.mutate(sessionForm)} className="w-full bg-gradient-to-r from-indigo-500 to-purple-500">Log Session</Button>
+            <div>
+              <Label className="text-slate-400">Tags</Label>
+              <div className="flex gap-2">
+                <Input value={sessionTagInput} onChange={(e) => setSessionTagInput(e.target.value)} placeholder="Add tag" className="bg-slate-800 border-slate-700 text-white" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSessionTag(); } }} list="session-tags" />
+                <datalist id="session-tags">{allSessionTags.map(t => <option key={t} value={t} />)}</datalist>
+                <Button onClick={addSessionTag} variant="outline" className="border-slate-600"><Plus className="w-4 h-4" /></Button>
+              </div>
+              {sessionForm.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {sessionForm.tags.map(tag => <span key={tag} className="flex items-center gap-1 px-2 py-1 text-sm rounded-full bg-purple-500/20 text-purple-300">#{tag}<button onClick={() => removeSessionTag(tag)} className="hover:text-white">×</button></span>)}
+                </div>
+              )}
+              {allSessionTags.filter(t => !sessionForm.tags.includes(t)).length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <span className="text-xs text-slate-500">Existing:</span>
+                  {allSessionTags.filter(t => !sessionForm.tags.includes(t)).slice(0, 8).map(tag => <button key={tag} onClick={() => setSessionForm({ ...sessionForm, tags: [...sessionForm.tags, tag] })} className="px-1.5 py-0.5 text-xs rounded-full bg-slate-700/50 text-slate-400 hover:bg-purple-500/20 hover:text-purple-300">#{tag}</button>)}
+                </div>
+              )}
+            </div>
+            <div><Label className="text-slate-400">Productivity Rating (1-5)</Label><div className="flex gap-2">{[1,2,3,4,5].map(n => <button key={n} onClick={() => setSessionForm({ ...sessionForm, productivity_rating: n })} className={`px-3 py-2 rounded-lg text-sm transition ${sessionForm.productivity_rating === n ? 'bg-amber-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>{n}⭐</button>)}</div></div>
+            <div><Label className="text-slate-400">Notes</Label><Textarea value={sessionForm.notes} onChange={(e) => setSessionForm({ ...sessionForm, notes: e.target.value })} placeholder="Session notes..." className="bg-slate-800 border-slate-700 text-white" /></div>
+            <div className="flex gap-2 pt-4">
+              {editingSession && <Button variant="destructive" onClick={() => { deleteSessionMutation.mutate(editingSession.id); setShowSessionDialog(false); resetSessionForm(); }} className="flex-1">Delete</Button>}
+              <Button onClick={handleSaveSession} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-500">{editingSession ? 'Save Changes' : 'Log Session'}</Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -171,13 +171,6 @@ export default function Layout({ children, currentPageName }) {
             </nav>
           </div>
 
-          {/* Footer */}
-          <div className="mt-auto p-6 border-t border-slate-800/50">
-            <div className="text-center">
-              <p className="text-xs text-slate-500">Built for excellence</p>
-              <p className="text-xs text-slate-600 mt-1">© 2026 Ryan's OS</p>
-            </div>
-          </div>
         </div>
       </div>
 

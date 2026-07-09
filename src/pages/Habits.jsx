@@ -529,11 +529,7 @@ export default function Habits() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        if (confirm(`Delete "${habit.name}" and all its logged data? This cannot be undone.`)) {
-                          deleteHabitMutation.mutate(habit);
-                        }
-                      }}
+                      onClick={() => deleteHabitMutation.mutate(habit)}
                       className="text-rose-400 hover:text-rose-300"
                     >
                       <Trash2 className="w-4 h-4" />

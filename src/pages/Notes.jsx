@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
-import { Plus, Search, Pin, Folder, Tag, MoreHorizontal, Trash2, FileText, Target } from 'lucide-react';
+import { Plus, Search, Pin, Folder, Tag, MoreHorizontal, Trash2, FileText, Target, FolderPlus, Edit2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +29,9 @@ export default function Notes() {
   const [noteForm, setNoteForm] = useState({ title: '', content: '', tags: [], folder: '', pinned: false, whiteboard_data: null });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState('text');
+  const [showFolderDialog, setShowFolderDialog] = useState(false);
+  const [folderForm, setFolderForm] = useState({ name: '', originalName: '' });
+  const [editingFolder, setEditingFolder] = useState(null);
 
   const { data: notes = [] } = useQuery({ queryKey: ['notes'], queryFn: () => db.entities.Note.list('-created_date') });
 
@@ -52,6 +55,36 @@ export default function Notes() {
   const handleTogglePin = async (note) => { await db.entities.Note.update(note.id, { pinned: !note.pinned }); queryClient.invalidateQueries({ queryKey: ['notes'] }); };
   const addTag = () => { if (tagInput.trim() && !noteForm.tags.includes(tagInput.trim())) { setNoteForm({ ...noteForm, tags: [...noteForm.tags, tagInput.trim()] }); setTagInput(''); } };
   const removeTag = (tag) => setNoteForm({ ...noteForm, tags: noteForm.tags.filter(t => t !== tag) });
+
+  const handleCreateFolder = () => {
+    if (!folderForm.name.trim()) return;
+    setSelectedFolder(folderForm.name.trim());
+    setShowFolderDialog(false);
+    setFolderForm({ name: '', originalName: '' });
+    setEditingFolder(null);
+  };
+
+  const handleRenameFolder = async () => {
+    if (!folderForm.name.trim() || !editingFolder) return;
+    const notesInFolder = notes.filter(n => n.folder === editingFolder);
+    for (const note of notesInFolder) {
+      await db.entities.Note.update(note.id, { folder: folderForm.name.trim() });
+    }
+    queryClient.invalidateQueries({ queryKey: ['notes'] });
+    setSelectedFolder(folderForm.name.trim());
+    setShowFolderDialog(false);
+    setFolderForm({ name: '', originalName: '' });
+    setEditingFolder(null);
+  };
+
+  const handleDeleteFolder = async (folderName) => {
+    const notesInFolder = notes.filter(n => n.folder === folderName);
+    for (const note of notesInFolder) {
+      await db.entities.Note.update(note.id, { folder: '' });
+    }
+    queryClient.invalidateQueries({ queryKey: ['notes'] });
+    if (selectedFolder === folderName) setSelectedFolder('all');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4 md:p-8">
@@ -82,11 +115,37 @@ export default function Notes() {
               <div className="sticky top-8 space-y-6">
                 <div className="relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" /><Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search notes..." className="pl-10 bg-slate-800/50 border-slate-700 text-white" /></div>
                 <div className="rounded-xl bg-slate-800/30 border border-slate-700/50 p-4">
-                  <h3 className="text-sm font-medium text-slate-400 mb-3 flex items-center gap-2"><Folder className="w-4 h-4" />Folders</h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium text-slate-400 flex items-center gap-2"><Folder className="w-4 h-4" />Folders</h3>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-amber-400" onClick={() => { setEditingFolder(null); setFolderForm({ name: '', originalName: '' }); setShowFolderDialog(true); }}>
+                      <FolderPlus className="w-4 h-4" />
+                    </Button>
+                  </div>
                   <div className="space-y-1">
                     <button onClick={() => setSelectedFolder('all')} className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${selectedFolder === 'all' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-300 hover:bg-slate-700/50'}`}>All Notes ({notes.length})</button>
                     <button onClick={() => setSelectedFolder('unfiled')} className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${selectedFolder === 'unfiled' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-300 hover:bg-slate-700/50'}`}>Unfiled ({notes.filter(n => !n.folder).length})</button>
-                    {folders.map(folder => <button key={folder} onClick={() => setSelectedFolder(folder)} className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${selectedFolder === folder ? 'bg-amber-500/20 text-amber-300' : 'text-slate-300 hover:bg-slate-700/50'}`}>{folder} ({notes.filter(n => n.folder === folder).length})</button>)}
+                    {folders.map(folder => (
+                      <div key={folder} className={`group flex items-center justify-between rounded-lg transition ${selectedFolder === folder ? 'bg-amber-500/20' : 'hover:bg-slate-700/50'}`}>
+                        <button onClick={() => setSelectedFolder(folder)} className={`flex-1 text-left px-3 py-2 text-sm ${selectedFolder === folder ? 'text-amber-300' : 'text-slate-300'}`}>
+                          {folder} ({notes.filter(n => n.folder === folder).length})
+                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-white">
+                              <MoreHorizontal className="w-3.5 h-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => { setEditingFolder(folder); setFolderForm({ name: folder, originalName: folder }); setShowFolderDialog(true); }}>
+                              <Edit2 className="w-3.5 h-3.5 mr-2" />Rename
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDeleteFolder(folder)} className="text-rose-400">
+                              <Trash2 className="w-3.5 h-3.5 mr-2" />Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 {allTags.length > 0 && <div className="rounded-xl bg-slate-800/30 border border-slate-700/50 p-4"><h3 className="text-sm font-medium text-slate-400 mb-3 flex items-center gap-2"><Tag className="w-4 h-4" />Tags</h3><div className="flex flex-wrap gap-2">{allTags.map(tag => <span key={tag} className="px-2 py-1 text-xs rounded-full bg-slate-700/50 text-slate-300">#{tag}</span>)}</div></div>}
@@ -166,6 +225,35 @@ export default function Notes() {
           </DialogContent>
         </Dialog>
       )}
+
+      <Dialog open={showFolderDialog} onOpenChange={(open) => { setShowFolderDialog(open); if (!open) { setEditingFolder(null); setFolderForm({ name: '', originalName: '' }); } }}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
+          <DialogHeader><DialogTitle>{editingFolder ? 'Rename Folder' : 'New Folder'}</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className="text-slate-400">Folder Name</Label>
+              <Input
+                value={folderForm.name}
+                onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })}
+                placeholder="e.g., Ideas, Projects, Research"
+                className="bg-slate-800 border-slate-700 text-white"
+                onKeyDown={(e) => e.key === 'Enter' && (editingFolder ? handleRenameFolder() : handleCreateFolder())}
+                autoFocus
+              />
+            </div>
+            {editingFolder && (
+              <p className="text-xs text-slate-500">
+                Renaming "{editingFolder}" will update {notes.filter(n => n.folder === editingFolder).length} note(s).
+              </p>
+            )}
+            <div className="flex gap-2 pt-2">
+              <Button onClick={() => editingFolder ? handleRenameFolder() : handleCreateFolder()} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500">
+                {editingFolder ? 'Rename Folder' : 'Create Folder'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

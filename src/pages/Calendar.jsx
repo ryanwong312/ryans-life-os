@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import RecurringEventForm from '@/components/calendar/RecurringEventForm';
 import { Switch } from '@/components/ui/switch';
 import CalendarEventItem from '@/components/calendar/CalendarEventItem';
+import GoogleCalendarSync from '@/components/calendar/GoogleCalendarSync';
 
 const categoryColors = { academic: 'bg-indigo-500', fitness: 'bg-emerald-500', social: 'bg-purple-500', personal: 'bg-teal-500', work: 'bg-amber-500' };
 
@@ -35,10 +36,11 @@ export default function Calendar() {
   const { data: events = [] } = useQuery({ queryKey: ['calendar-events', format(monthStart, 'yyyy-MM')], queryFn: () => db.entities.CalendarEvent.filter({ date: { $gte: format(calendarStart, 'yyyy-MM-dd'), $lte: format(calendarEnd, 'yyyy-MM-dd') } }) });
   const { data: workouts = [] } = useQuery({ queryKey: ['workouts-calendar', format(monthStart, 'yyyy-MM')], queryFn: () => db.entities.Workout.filter({ date: { $gte: format(calendarStart, 'yyyy-MM-dd'), $lte: format(calendarEnd, 'yyyy-MM-dd') } }) });
   const { data: assignments = [] } = useQuery({ queryKey: ['assignments-calendar'], queryFn: () => db.entities.Assignment.filter({ due_date: { $gte: format(calendarStart, 'yyyy-MM-dd'), $lte: format(calendarEnd, 'yyyy-MM-dd') } }) });
+  const { data: studySessions = [] } = useQuery({ queryKey: ['study-sessions-calendar', format(monthStart, 'yyyy-MM')], queryFn: () => db.entities.StudySession.filter({ date: { $gte: format(calendarStart, 'yyyy-MM-dd'), $lte: format(calendarEnd, 'yyyy-MM-dd') } }) });
 
   const getEventsForDay = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return { events: events.filter(e => e.date === dateStr), workouts: workouts.filter(w => w.date === dateStr), assignments: assignments.filter(a => a.due_date === dateStr) };
+    return { events: events.filter(e => e.date === dateStr), workouts: workouts.filter(w => w.date === dateStr), assignments: assignments.filter(a => a.due_date === dateStr), studySessions: studySessions.filter(s => s.date === dateStr) };
   };
 
   const selectedDayData = getEventsForDay(selectedDate);
@@ -81,7 +83,7 @@ export default function Calendar() {
                 const isToday = isSameDay(day, new Date());
                 const isSelected = isSameDay(day, selectedDate);
                 const isCurrentMonth = isSameMonth(day, currentMonth);
-                const totalItems = dayData.events.length + dayData.workouts.length + dayData.assignments.length;
+                const totalItems = dayData.events.length + dayData.workouts.length + dayData.assignments.length + dayData.studySessions.length;
 
                 return (
                   <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.01 }} onClick={() => handleDayClick(day)}
@@ -89,6 +91,7 @@ export default function Calendar() {
                     <div className={`text-sm font-medium mb-1 ${isToday ? 'text-teal-400' : isCurrentMonth ? 'text-white' : 'text-slate-500'}`}>{format(day, 'd')}</div>
                     <div className="space-y-1">
                       {dayData.events.slice(0, 2).map(event => <div key={event.id} className={`text-xs px-1.5 py-0.5 rounded truncate ${categoryColors[event.category]} text-white`}>{event.title}</div>)}
+                      {dayData.studySessions.slice(0, 1).map(session => <div key={session.id} className="text-xs px-1.5 py-0.5 rounded truncate bg-indigo-500/30 text-indigo-300 border border-indigo-500/30">📖 {session.duration_minutes}m</div>)}
                       {dayData.workouts.slice(0, 1).map(workout => <div key={workout.id} className="text-xs px-1.5 py-0.5 rounded truncate bg-cyan-500/30 text-cyan-300 border border-cyan-500/30">{workout.type}</div>)}
                       {dayData.assignments.slice(0, 1).map(assignment => <div key={assignment.id} className="text-xs px-1.5 py-0.5 rounded truncate bg-rose-500/30 text-rose-300 border border-rose-500/30">📚 {assignment.title}</div>)}
                       {totalItems > 3 && <div className="text-xs text-slate-400">+{totalItems - 3} more</div>}
@@ -100,6 +103,7 @@ export default function Calendar() {
           </div>
 
           <div className="lg:col-span-1">
+            <GoogleCalendarSync />
             <div className="sticky top-8 rounded-xl bg-slate-800/30 border border-slate-700/50 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-white">{format(selectedDate, 'MMMM d')}</h2>
@@ -107,9 +111,10 @@ export default function Calendar() {
               </div>
               <div className="space-y-4">
                 {selectedDayData.events.length > 0 && <div><h3 className="text-sm font-medium text-slate-400 mb-2">Events</h3><div className="space-y-2">{selectedDayData.events.map(event => <CalendarEventItem key={event.id} event={event} compact onClick={() => handleEditEvent(event)} />)}</div></div>}
+                {selectedDayData.studySessions.length > 0 && <div><h3 className="text-sm font-medium text-slate-400 mb-2">Study Sessions</h3><div className="space-y-2">{selectedDayData.studySessions.map(session => <div key={session.id} className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20"><p className="text-sm font-medium text-white">{session.name || session.topic || 'Study Session'}</p><p className="text-xs text-slate-400">{session.duration_minutes} min{session.start_time ? ' · ' + session.start_time : ''}</p>{session.tags?.length > 0 && <div className="flex gap-1 mt-1">{session.tags.map(t => <span key={t} className="px-1 py-0.5 text-xs rounded bg-indigo-500/20 text-indigo-300">#{t}</span>)}</div>}</div>)}</div></div>}
                 {selectedDayData.workouts.length > 0 && <div><h3 className="text-sm font-medium text-slate-400 mb-2">Workouts</h3><div className="space-y-2">{selectedDayData.workouts.map(workout => <div key={workout.id} className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20"><p className="text-sm font-medium text-white capitalize">{workout.type?.replace('_', ' ')}</p>{workout.planned_distance_km && <p className="text-xs text-slate-400">{workout.planned_distance_km} km</p>}</div>)}</div></div>}
                 {selectedDayData.assignments.length > 0 && <div><h3 className="text-sm font-medium text-slate-400 mb-2">Due Today</h3><div className="space-y-2">{selectedDayData.assignments.map(assignment => <div key={assignment.id} className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20"><p className="text-sm font-medium text-white">{assignment.title}</p><p className="text-xs text-slate-400 capitalize">{assignment.type}</p></div>)}</div></div>}
-                {selectedDayData.events.length === 0 && selectedDayData.workouts.length === 0 && selectedDayData.assignments.length === 0 && <p className="text-slate-500 text-sm text-center py-4">No events</p>}
+                {selectedDayData.events.length === 0 && selectedDayData.workouts.length === 0 && selectedDayData.assignments.length === 0 && selectedDayData.studySessions.length === 0 && <p className="text-slate-500 text-sm text-center py-4">No events</p>}
               </div>
             </div>
           </div>

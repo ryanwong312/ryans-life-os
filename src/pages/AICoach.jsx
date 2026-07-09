@@ -63,13 +63,16 @@ export default function AICoach() {
     },
   });
 
-  const { data: recentDays = [] } = useQuery({ queryKey: ['ai-context-days'], queryFn: () => db.entities.Day.filter({ date: { $gte: format(subDays(new Date(), 7), 'yyyy-MM-dd') } }) });
+  const { data: recentDays = [] } = useQuery({ queryKey: ['ai-context-days'], queryFn: () => db.entities.Day.filter({ date: { $gte: format(subDays(new Date(), 30), 'yyyy-MM-dd') } }, '-date', 30) });
   const { data: habits = [] } = useQuery({ queryKey: ['ai-context-habits'], queryFn: () => db.entities.Habit.filter({ active: true }) });
-  const { data: recentHabitLogs = [] } = useQuery({ queryKey: ['ai-context-habit-logs'], queryFn: () => db.entities.HabitLog.filter({ date: { $gte: format(subDays(new Date(), 7), 'yyyy-MM-dd') } }) });
-  const { data: recentWorkouts = [] } = useQuery({ queryKey: ['ai-context-workouts'], queryFn: () => db.entities.Workout.filter({ date: { $gte: format(subDays(new Date(), 14), 'yyyy-MM-dd') } }) });
+  const { data: recentHabitLogs = [] } = useQuery({ queryKey: ['ai-context-habit-logs'], queryFn: () => db.entities.HabitLog.filter({ date: { $gte: format(subDays(new Date(), 30), 'yyyy-MM-dd') } }, '-date', 500) });
+  const { data: recentWorkouts = [] } = useQuery({ queryKey: ['ai-context-workouts'], queryFn: () => db.entities.Workout.filter({ date: { $gte: format(subDays(new Date(), 30), 'yyyy-MM-dd') } }, '-date', 30) });
   const { data: goals = [] } = useQuery({ queryKey: ['ai-context-goals'], queryFn: () => db.entities.Goal.filter({ status: 'active' }) });
   const { data: upcomingAssignments = [] } = useQuery({ queryKey: ['ai-context-assignments'], queryFn: () => db.entities.Assignment.filter({ status: { $ne: 'completed' } }, 'due_date', 10) });
-  const { data: studySessions = [] } = useQuery({ queryKey: ['ai-context-study'], queryFn: () => db.entities.StudySession.filter({ date: { $gte: format(subDays(new Date(), 7), 'yyyy-MM-dd') } }) });
+  const { data: studySessions = [] } = useQuery({ queryKey: ['ai-context-study'], queryFn: () => db.entities.StudySession.filter({ date: { $gte: format(subDays(new Date(), 30), 'yyyy-MM-dd') } }, '-date', 50) });
+  const { data: subjects = [] } = useQuery({ queryKey: ['ai-context-subjects'], queryFn: () => db.entities.IBSubject.list() });
+  const { data: notes = [] } = useQuery({ queryKey: ['ai-context-notes'], queryFn: () => db.entities.Note.list('-created_date', 10) });
+  const { data: races = [] } = useQuery({ queryKey: ['ai-context-races'], queryFn: () => db.entities.Race.filter({ completed: false }, 'date', 5) });
 
   useEffect(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, [messages]);
 
@@ -77,37 +80,85 @@ export default function AICoach() {
     const today = format(new Date(), 'yyyy-MM-dd');
     const todayData = recentDays.find(d => d.date === today);
     const completedHabitsToday = recentHabitLogs.filter(l => l.date === today && l.completed).length;
-    const weekHabitRate = recentHabitLogs.length > 0 ? Math.round((recentHabitLogs.filter(l => l.completed).length / recentHabitLogs.length) * 100) : 0;
-    const weeklyKm = recentWorkouts.reduce((sum, w) => sum + (w.actual_distance_km || 0), 0);
+    const weekHabitLogs = recentHabitLogs.filter(l => l.date >= format(subDays(new Date(), 7), 'yyyy-MM-dd'));
+    const weekHabitRate = weekHabitLogs.length > 0 ? Math.round((weekHabitLogs.filter(l => l.completed).length / weekHabitLogs.length) * 100) : 0;
+    const weeklyKm = recentWorkouts.filter(w => w.date >= format(subDays(new Date(), 7), 'yyyy-MM-dd')).reduce((sum, w) => sum + (w.actual_distance_km || 0), 0);
     const completedWorkouts = recentWorkouts.filter(w => w.completed).length;
-    const weeklyStudyMinutes = studySessions.reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
+    const weeklyStudyMinutes = studySessions.filter(s => s.date >= format(subDays(new Date(), 7), 'yyyy-MM-dd')).reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
+    const monthStudyMinutes = studySessions.reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
 
-    return `RYAN'S CURRENT DATA (${format(new Date(), 'MMMM d, yyyy')}):
+    // Journal entries with content
+    const journalEntries = recentDays
+      .filter(d => d.journal_content || d.one_interesting_thing || d.gratitude_1)
+      .slice(0, 10)
+      .map(d => {
+        const parts = [];
+        if (d.mood) parts.push(`Mood: ${d.mood}/7`);
+        if (d.journal_content) parts.push(`Journal: ${d.journal_content.substring(0, 300)}`);
+        if (d.one_interesting_thing) parts.push(`Interesting: ${d.one_interesting_thing}`);
+        if (d.gratitude_1) parts.push(`Grateful for: ${d.gratitude_1}${d.gratitude_2 ? ', ' + d.gratitude_2 : ''}${d.gratitude_3 ? ', ' + d.gratitude_3 : ''}`);
+        return `- ${d.date}: ${parts.join(' | ')}`;
+      }).join('\n');
 
-TODAY'S STATUS:
-- Mood: ${todayData?.mood || 'Not logged'}
+    // Habit streaks and details
+    const habitDetails = habits.map(h => {
+      const logs = recentHabitLogs.filter(l => l.habit_id === h.id && l.completed);
+      const recentLogs = logs.slice(0, 7);
+      return `- ${h.name} (${h.type}): ${logs.length} completions in last 30 days${h.description ? ' - ' + h.description : ''}`;
+    }).join('\n');
+
+    // Study sessions with details
+    const studyDetails = studySessions.slice(0, 15).map(s => {
+      const subject = subjects.find(sub => sub.id === s.subject_id);
+      return `- ${s.date}: ${subject?.name || 'Unknown'} - ${s.duration_minutes}min${s.name ? ' (' + s.name + ')' : ''}${s.topic ? ' - ' + s.topic : ''}${s.tags?.length ? ' [' + s.tags.join(', ') + ']' : ''}${s.productivity_rating ? ' ⭐'.repeat(s.productivity_rating) : ''}`;
+    }).join('\n');
+
+    return `RYAN'S COMPREHENSIVE LIFE DATA (${format(new Date(), 'MMMM d, yyyy')}):
+
+=== TODAY'S STATUS ===
+- Mood: ${todayData?.mood ? todayData.mood + '/7' : 'Not logged'}
 - Sleep: ${todayData?.sleep_hours ? todayData.sleep_hours + ' hours (' + todayData.sleep_quality + ')' : 'Not logged'}
-- Habits Completed: ${completedHabitsToday}/${habits.length}
+- Energy: ${todayData?.energy_level || 'Not logged'}/10
+- Habits Completed Today: ${completedHabitsToday}/${habits.length}
 
-WEEKLY SUMMARY:
+=== WEEKLY SUMMARY ===
 - Habit Completion Rate: ${weekHabitRate}%
 - Running: ${weeklyKm.toFixed(1)} km (${completedWorkouts} workouts)
 - Study Time: ${Math.floor(weeklyStudyMinutes / 60)}h ${weeklyStudyMinutes % 60}m
 
-ACTIVE GOALS (${goals.length}):
-${goals.slice(0, 5).map(g => `- ${g.title} (${g.progress}% complete, ${g.category})`).join('\n')}
+=== MONTHLY STUDY ===
+- Total Study Time: ${Math.floor(monthStudyMinutes / 60)}h ${monthStudyMinutes % 60}m
+- Sessions Logged: ${studySessions.length}
 
-UPCOMING DEADLINES:
-${upcomingAssignments.slice(0, 5).map(a => {
+=== JOURNAL ENTRIES (last 30 days) ===
+${journalEntries || 'No journal entries logged'}
+
+=== HABITS BEING TRACKED ===
+${habitDetails || 'No habits tracked'}
+
+=== STUDY SESSIONS (last 30 days) ===
+${studyDetails || 'No study sessions logged'}
+
+=== ACTIVE GOALS (${goals.length}) ===
+${goals.slice(0, 8).map(g => `- ${g.title} (${g.progress}% complete, ${g.category})${g.target_date ? ' - target: ' + format(new Date(g.target_date), 'MMM d') : ''}${g.why_it_matters ? ' - ' + g.why_it_matters.substring(0, 100) : ''}`).join('\n') || 'No active goals'}
+
+=== IB SUBJECTS ===
+${subjects.map(s => `- ${s.name} (${s.level})${s.predicted_grade ? ' - Predicted: ' + s.predicted_grade : ''}${s.ia_progress != null ? ' - IA: ' + s.ia_progress + '%' : ''}`).join('\n') || 'No subjects'}
+
+=== UPCOMING DEADLINES ===
+${upcomingAssignments.slice(0, 8).map(a => {
   const dueDate = a.due_date ? format(new Date(a.due_date), 'MMM d') : 'No date';
-  return `- ${a.title} - Due: ${dueDate} (${a.type})`;
-}).join('\n')}
+  return `- ${a.title} - Due: ${dueDate} (${a.type})${a.priority ? ' [' + a.priority + ' priority]' : ''}`;
+}).join('\n') || 'No upcoming deadlines'}
 
-HABITS BEING TRACKED:
-${habits.map(h => `- ${h.name} (${h.type})`).join('\n')}
+=== RECENT WORKOUTS ===
+${recentWorkouts.slice(0, 10).map(w => `- ${w.date}: ${w.type} - ${w.actual_distance_km || w.planned_distance_km || 0}km ${w.completed ? '✓' : '(planned)'}${w.feeling ? ' - felt ' + w.feeling : ''}`).join('\n') || 'No recent workouts'}
 
-RECENT WORKOUTS:
-${recentWorkouts.slice(0, 5).map(w => `- ${w.date}: ${w.type} - ${w.actual_distance_km || w.planned_distance_km || 0}km ${w.completed ? '✓' : '(planned)'}`).join('\n')}`;
+=== UPCOMING RACES ===
+${races.map(r => `- ${r.name} on ${format(new Date(r.date), 'MMM d')} - ${r.distance_km}km (${r.priority} priority)${r.target_time ? ' target: ' + r.target_time : ''}`).join('\n') || 'No upcoming races'}
+
+=== RECENT NOTES ===
+${notes.slice(0, 5).map(n => `- ${n.title} (${n.folder || 'unfiled'})${n.tags?.length ? ' [' + n.tags.join(', ') + ']' : ''}`).join('\n') || 'No notes'}`;
   };
 
   const handleSend = async () => {

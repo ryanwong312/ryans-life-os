@@ -49,24 +49,24 @@ export default function MoodSelector({ value, onChange, size = 'md', showLabel =
   const selectedValue = moodToValue(value);
 
   const sizeClasses = {
-    xs: 'text-base p-1',
-    sm: 'text-lg p-1.5',
-    md: 'text-2xl p-3',
-    lg: 'text-3xl p-4',
+    xs: 'text-base py-2',
+    sm: 'text-lg py-2.5',
+    md: 'text-2xl py-3',
+    lg: 'text-3xl py-4',
   };
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
-      <div className="flex items-center justify-center gap-1 flex-nowrap w-full">
+      <div className="flex items-stretch justify-center gap-1.5 flex-nowrap w-full">
         {moods.map((mood) => {
           const isSelected = selectedValue === mood.value;
           return (
             <motion.button
               key={mood.value}
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => onChange(mood.value)}
-              className={`${sizeClasses[size]} rounded-xl transition-all duration-200 ${
+              className={`flex-1 rounded-xl transition-all duration-200 ${sizeClasses[size]} ${
                 isSelected
                   ? `${mood.color} shadow-lg ring-2 ring-white/30`
                   : 'bg-slate-800/50 hover:bg-slate-700/50'

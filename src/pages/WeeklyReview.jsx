@@ -1,17 +1,18 @@
 const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me: async()=>null }, entities:new Proxy({}, { get:()=>({ filter:async()=>[], get:async()=>null, create:async()=>({}), update:async()=>({}), delete:async()=>({}) }) }), integrations:{ Core:{ UploadFile:async()=>({ file_url:'' }) } } };
 
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 
 import { motion } from 'framer-motion';
 import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
-import { BarChart3, Sparkles, Loader2, TrendingUp, Flame, Moon, BookOpen, Footprints, Target, Lightbulb } from 'lucide-react';
+import { BarChart3, Sparkles, Loader2, TrendingUp, Flame, Moon, BookOpen, Footprints, Target, Lightbulb, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
 
 export default function WeeklyReview() {
   const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
+  const deleteReportMutation = useMutation({ mutationFn: (id) => db.entities.WeeklyReport.delete(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['weekly-reports'] }) });
 
   const { data: reports = [] } = useQuery({
     queryKey: ['weekly-reports'],
@@ -160,6 +161,9 @@ Write a warm, encouraging weekly summary (2-3 paragraphs). Highlight what went w
                     Generated {report.generated_at ? format(new Date(report.generated_at), 'MMM d, h:mm a') : ''}
                   </p>
                 </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-rose-400" onClick={() => deleteReportMutation.mutate(report.id)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
 
               {report.stats && (

@@ -17,6 +17,10 @@
     "topic": {
       "type": "string"
     },
+    "name": {
+      "type": "string",
+      "description": "Custom name for the study session"
+    },
     "type": {
       "type": "string",
       "enum": [
@@ -31,10 +35,21 @@
     "notes": {
       "type": "string"
     },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Custom tags for categorizing sessions"
+    },
     "productivity_rating": {
       "type": "number",
       "minimum": 1,
       "maximum": 5
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Start time (HH:MM) if timed session"
     }
   },
   "required": [
