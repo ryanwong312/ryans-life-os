@@ -23,20 +23,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { usePreferences } from '@/components/customization/PreferencesProvider';
 
+// Reordered and removed 'Weekly Review'
 const navItems = [
   { name: 'Dashboard', icon: Home, page: 'Dashboard', emoji: '🏠' },
   { name: 'Journal', icon: BookOpen, page: 'Journal', emoji: '📖' },
   { name: 'Habits', icon: CheckSquare, page: 'Habits', emoji: '✅' },
-  { name: 'Running', icon: Activity, page: 'Running', emoji: '🏃' },
-  { name: 'Study Hub', icon: GraduationCap, page: 'Study', emoji: '🎓' },
   { name: 'Calendar', icon: Calendar, page: 'Calendar', emoji: '📅' },
+  { name: 'Study Hub', icon: GraduationCap, page: 'Study', emoji: '🎓' },
+  { name: 'Running', icon: Activity, page: 'Running', emoji: '🏃' },
   { name: 'Notes', icon: FileText, page: 'Notes', emoji: '📝' },
   { name: 'Sleep', icon: Moon, page: 'Sleep', emoji: '😴' },
-  { name: 'Weekly Review', icon: BarChart3, page: 'WeeklyReview', emoji: '📊' },
   { name: 'Personal', icon: Lock, page: 'Personal', emoji: '🔒' },
-  { name: 'Data', icon: Database, page: 'Data', emoji: '💾' },
   { name: 'AI Coach', icon: MessageCircle, page: 'AICoach', emoji: '💬' },
   { name: 'Customize', icon: Settings, page: 'Customization', emoji: '⚙️' },
+  { name: 'Data', icon: Database, page: 'Data', emoji: '💾' },
 ];
 
 export default function Layout({ children, currentPageName }) {

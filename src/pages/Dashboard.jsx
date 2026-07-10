@@ -2,7 +2,7 @@ const db = globalThis.__B44_DB__ || { auth:{ isAuthenticated: async()=>false, me
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -59,6 +59,7 @@ function LiveClock() {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [checkInData, setCheckInData] = useState({
     mood: 5,
@@ -186,12 +187,13 @@ export default function Dashboard() {
             <p className="text-slate-400">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
           </div>
           
+          {/* Replace Daily Check-In with Weekly Review */}
           <Button 
-            onClick={() => setShowCheckIn(true)}
+            onClick={() => navigate('/WeeklyReview')}
             className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white gap-2"
           >
             <Sparkles className="w-4 h-4" />
-            {today ? 'Update Check-In' : 'Daily Check-In'}
+            Weekly Review
           </Button>
         </div>
 
@@ -358,6 +360,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Keep the Daily Check-In dialog for manual use if needed, but the button is replaced. You can remove it entirely if you wish */}
       <Dialog open={showCheckIn} onOpenChange={setShowCheckIn}>
         <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
           <DialogHeader>

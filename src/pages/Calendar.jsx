@@ -97,7 +97,7 @@ export default function Calendar() {
       toast({
         title: `🧹 Removed ${count} duplicate events`,
         description: count === 0 ? 'No duplicates found.' : 'Your calendar is now clean.',
-        duration: 5000, // auto‑dismiss after 5s
+        duration: 5000,
       });
       queryClient.invalidateQueries({ queryKey: ['calendar-events'] });
       queryClient.invalidateQueries({ queryKey: ['all-calendar-events'] });
@@ -131,7 +131,7 @@ export default function Calendar() {
           </div>
         </div>
 
-        {/* Action Buttons Row - all styled consistently */}
+        {/* Action Buttons Row */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <Button 
             variant="outline" 
@@ -150,27 +150,30 @@ export default function Calendar() {
             Add Event
           </Button>
 
+          {/* Log All Events – white bg, dark text */}
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => { console.log('All events:', allEvents); }} 
-            className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+            className="border-slate-300 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-900"
           >
             Log All Events
           </Button>
 
+          {/* Clean Duplicates – white bg, dark text */}
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => cleanDuplicatesMutation.mutate()} 
-            className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+            className="border-slate-300 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-900"
             disabled={cleanDuplicatesMutation.isPending}
           >
             {cleanDuplicatesMutation.isPending ? 'Cleaning...' : 'Clean Duplicates'}
           </Button>
 
+          {/* Sync Google Calendar – white bg, dark text via className */}
           <div className="ml-auto">
-            <GoogleCalendarSync />
+            <GoogleCalendarSync className="border-slate-300 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-900" />
           </div>
         </div>
 
