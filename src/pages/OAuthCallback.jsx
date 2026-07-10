@@ -7,7 +7,7 @@ import { syncGoogleCalendar, getUserInfo } from '@/lib/google-calendar';
 const ALLOWED_EMAILS = [
   'wongryan312@gmail.com',
   'wongryanhk@gmail.com',
-  'thenewryanwong@gmail.com', // example
+  // 'thenewryanwong@gmail.com', // example
   // add more emails if needed
 ];
 
