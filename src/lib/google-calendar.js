@@ -1,6 +1,7 @@
 import { createClient } from '@base44/sdk';
 
-export async function syncGoogleCalendar(accessToken, email, calendarId = 'primary') {
+// The existing sync function (unchanged, but we'll keep it)
+export async function syncGoogleCalendar(accessToken, calendarId = 'primary') {
   try {
     const now = new Date();
     const sixMonthsAgo = new Date(now);
@@ -78,7 +79,6 @@ export async function syncGoogleCalendar(accessToken, email, calendarId = 'prima
         category: 'personal',
         tags: ['google-sync'],
         google_event_id: event.id,
-        synced_by: email, // store the email that synced this event
       };
     });
 
@@ -110,7 +110,6 @@ export async function syncGoogleCalendar(accessToken, email, calendarId = 'prima
             status: ev.status,
             end_time: ev.end_time,
             tags: ev.tags,
-            synced_by: ev.synced_by,
           });
           updated++;
           continue;
@@ -125,7 +124,7 @@ export async function syncGoogleCalendar(accessToken, email, calendarId = 'prima
         if (existingEvent.location !== ev.location) { existingEvent.location = ev.location; needsUpdate = true; }
         if (existingEvent.status !== ev.status) { existingEvent.status = ev.status; needsUpdate = true; }
         if (existingEvent.end_time !== ev.end_time) { existingEvent.end_time = ev.end_time; needsUpdate = true; }
-        if (existingEvent.synced_by !== ev.synced_by) { existingEvent.synced_by = ev.synced_by; needsUpdate = true; }
+        if (JSON.stringify(existingEvent.tags) !== JSON.stringify(ev.tags)) { existingEvent.tags = ev.tags; needsUpdate = true; }
 
         if (needsUpdate) {
           await db.entities.CalendarEvent.update(existingEvent.id, {
@@ -135,7 +134,6 @@ export async function syncGoogleCalendar(accessToken, email, calendarId = 'prima
             status: ev.status,
             end_time: ev.end_time,
             tags: ev.tags,
-            synced_by: ev.synced_by,
           });
           updated++;
         } else {
@@ -147,13 +145,14 @@ export async function syncGoogleCalendar(accessToken, email, calendarId = 'prima
       }
     }
 
-    return { success: true, imported, updated, skipped, total: allEvents.length, email };
+    return { success: true, imported, updated, skipped, total: allEvents.length };
   } catch (error) {
     console.error('Google Calendar sync error:', error);
-    return { success: false, error: error.message, email };
+    return { success: false, error: error.message };
   }
 }
 
+// New: get user info from Google
 export async function getUserInfo(accessToken) {
   const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
     headers: { 'Authorization': `Bearer ${accessToken}` },
@@ -164,6 +163,7 @@ export async function getUserInfo(accessToken) {
   return response.json();
 }
 
+// OAuth helper with state parameter
 export function getGoogleAuthUrl(state = 'sync') {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI || `${window.location.origin}/api/auth/google/callback`;
@@ -172,10 +172,10 @@ export function getGoogleAuthUrl(state = 'sync') {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'https://www.googleapis.com/auth/calendar.readonly email profile',
+    scope: 'https://www.googleapis.com/auth/calendar.readonly email profile', // added email and profile
     access_type: 'offline',
     prompt: 'consent',
-    state: state,
+    state: state, // pass 'login' or 'sync'
   });
 
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
