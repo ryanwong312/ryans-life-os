@@ -33,24 +33,20 @@ export default function Calendar() {
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  // ----- DEBUG: Log events when they are fetched -----
   const { data: events = [], refetch: refetchEvents } = useQuery({
     queryKey: ['calendar-events', format(monthStart, 'yyyy-MM')],
     queryFn: async () => {
       const result = await db.entities.CalendarEvent.filter({ 
         date: { $gte: format(calendarStart, 'yyyy-MM-dd'), $lte: format(calendarEnd, 'yyyy-MM-dd') }
       });
-      console.log(`📅 Events for ${format(monthStart, 'yyyy-MM')}:`, result);
       return result;
     },
   });
 
-  // Also fetch all events (no date filter) to see total count
   const { data: allEvents = [] } = useQuery({
     queryKey: ['all-calendar-events'],
     queryFn: async () => {
       const result = await db.entities.CalendarEvent.list('-date');
-      console.log(`📅 TOTAL EVENTS IN DATABASE: ${result.length}`, result.slice(0, 5));
       return result;
     },
     staleTime: 0,
@@ -59,11 +55,6 @@ export default function Calendar() {
   const { data: workouts = [] } = useQuery({ queryKey: ['workouts-calendar', format(monthStart, 'yyyy-MM')], queryFn: () => db.entities.Workout.filter({ date: { $gte: format(calendarStart, 'yyyy-MM-dd'), $lte: format(calendarEnd, 'yyyy-MM-dd') } }) });
   const { data: assignments = [] } = useQuery({ queryKey: ['assignments-calendar'], queryFn: () => db.entities.Assignment.filter({ due_date: { $gte: format(calendarStart, 'yyyy-MM-dd'), $lte: format(calendarEnd, 'yyyy-MM-dd') } }) });
   const { data: studySessions = [] } = useQuery({ queryKey: ['study-sessions-calendar', format(monthStart, 'yyyy-MM')], queryFn: () => db.entities.StudySession.filter({ date: { $gte: format(calendarStart, 'yyyy-MM-dd'), $lte: format(calendarEnd, 'yyyy-MM-dd') } }) });
-
-  // ----- DEBUG: Log after events change -----
-  useEffect(() => {
-    console.log(`🔍 Calendar query results: ${events.length} events for this month.`);
-  }, [events]);
 
   const getEventsForDay = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -93,11 +84,23 @@ export default function Calendar() {
             <h1 className="text-2xl md:text-3xl font-bold text-white min-w-[200px] text-center">{format(currentMonth, 'MMMM yyyy')}</h1>
             <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="text-slate-400"><ChevronRight className="w-5 h-5" /></Button>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => { setCurrentMonth(new Date()); setSelectedDate(new Date()); }} className="border-slate-600">Today</Button>
-            <Button onClick={handleAddEvent} className="bg-gradient-to-r from-teal-500 to-emerald-500 gap-2"><Plus className="w-4 h-4" />Add Event</Button>
-            {/* Debug button to log all events */}
-            <Button variant="outline" size="sm" onClick={() => { console.log('All events:', allEvents); }} className="border-slate-600">Log All Events</Button>
+        </div>
+
+        {/* Action Buttons Row */}
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <Button variant="outline" size="sm" onClick={() => { setCurrentMonth(new Date()); setSelectedDate(new Date()); }} className="border-slate-600 text-slate-300 hover:bg-slate-800">
+            Today
+          </Button>
+          <Button onClick={handleAddEvent} className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white hover:opacity-90 gap-2">
+            <Plus className="w-4 h-4" />
+            Add Event
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => { console.log('All events:', allEvents); }} className="border-slate-600 text-slate-300 hover:bg-slate-800">
+            Log All Events
+          </Button>
+          {/* Google Calendar Sync - moved here, styled to match */}
+          <div className="ml-auto">
+            <GoogleCalendarSync />
           </div>
         </div>
 
@@ -132,7 +135,6 @@ export default function Calendar() {
           </div>
 
           <div className="lg:col-span-1">
-            <GoogleCalendarSync />
             <div className="sticky top-8 rounded-xl bg-slate-800/30 border border-slate-700/50 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-white">{format(selectedDate, 'MMMM d')}</h2>

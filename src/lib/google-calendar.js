@@ -1,9 +1,8 @@
 import { createClient } from '@base44/sdk';
 
-// This function will be called from your frontend
 export async function syncGoogleCalendar(accessToken, calendarId = 'primary') {
   try {
-    // Set date range: from 6 months ago to 12 months in the future
+    // Date range: 6 months ago to 12 months ahead
     const now = new Date();
     const sixMonthsAgo = new Date(now);
     sixMonthsAgo.setMonth(now.getMonth() - 6);
@@ -18,7 +17,6 @@ export async function syncGoogleCalendar(accessToken, calendarId = 'primary') {
     let pageCount = 0;
 
     do {
-      // Build URL with pagination token
       let url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events?` +
         `maxResults=250&` +
         `orderBy=startTime&` +
@@ -47,28 +45,22 @@ export async function syncGoogleCalendar(accessToken, calendarId = 'primary') {
       allEvents = allEvents.concat(items);
       nextPageToken = data.nextPageToken || null;
       pageCount++;
-
-      // Safety: limit to 10 pages (2500 events) to avoid infinite loops
       if (pageCount > 10) break;
-
     } while (nextPageToken);
 
-    // 2. Convert Google events to your app's format
+    // Convert Google events to your app's format
     const convertedEvents = allEvents.map(event => {
-      // Determine if it's an all-day event (no dateTime)
       const start = event.start;
       const end = event.end;
-      const isAllDay = !!start?.date; // if date field exists, it's all-day
+      const isAllDay = !!start?.date;
 
       let date, startTime, endTime;
 
       if (isAllDay) {
-        // All-day events: use the date as-is (YYYY-MM-DD)
         date = start.date;
         startTime = '';
         endTime = '';
       } else {
-        // Timed events: extract date and time
         const startDateTime = new Date(start.dateTime);
         const endDateTime = new Date(end.dateTime);
         date = startDateTime.toISOString().split('T')[0];
@@ -85,36 +77,87 @@ export async function syncGoogleCalendar(accessToken, calendarId = 'primary') {
         description: event.description || '',
         location: event.location || '',
         status: event.status === 'cancelled' ? 'cancelled' : 'confirmed',
-        category: 'personal', // default; you can add logic to map categories
+        category: 'personal',
         tags: ['google-sync'],
         google_event_id: event.id,
       };
     });
 
-    // 3. Save to your Base44 app
     const db = createClient({
       appId: import.meta.env.VITE_BASE44_APP_ID,
       headers: { api_key: import.meta.env.VITE_BASE44_API_KEY },
     });
 
     let imported = 0;
+    let updated = 0;
+    let skipped = 0;
+
     for (const ev of convertedEvents) {
-      // Check if already exists (by google_event_id)
-      const existing = await db.entities.CalendarEvent.filter({ google_event_id: ev.google_event_id });
+      // 1. Try to find by google_event_id
+      let existing = await db.entities.CalendarEvent.filter({ google_event_id: ev.google_event_id });
+
+      // 2. If not found, try to find by title + date + start_time + all_day (fallback dedupe)
       if (existing.length === 0) {
+        const possibleDuplicates = await db.entities.CalendarEvent.filter({
+          title: ev.title,
+          date: ev.date,
+          start_time: ev.start_time,
+          all_day: ev.all_day,
+        });
+        if (possibleDuplicates.length > 0) {
+          // Update the first duplicate with google_event_id and refresh fields
+          const dup = possibleDuplicates[0];
+          await db.entities.CalendarEvent.update(dup.id, {
+            google_event_id: ev.google_event_id,
+            description: ev.description,
+            location: ev.location,
+            status: ev.status,
+            end_time: ev.end_time,
+            tags: ev.tags,
+          });
+          updated++;
+          continue;
+        }
+      }
+
+      if (existing.length > 0) {
+        // Event already exists – update if needed
+        const existingEvent = existing[0];
+        let needsUpdate = false;
+        if (existingEvent.title !== ev.title) { existingEvent.title = ev.title; needsUpdate = true; }
+        if (existingEvent.description !== ev.description) { existingEvent.description = ev.description; needsUpdate = true; }
+        if (existingEvent.location !== ev.location) { existingEvent.location = ev.location; needsUpdate = true; }
+        if (existingEvent.status !== ev.status) { existingEvent.status = ev.status; needsUpdate = true; }
+        if (existingEvent.end_time !== ev.end_time) { existingEvent.end_time = ev.end_time; needsUpdate = true; }
+        if (JSON.stringify(existingEvent.tags) !== JSON.stringify(ev.tags)) { existingEvent.tags = ev.tags; needsUpdate = true; }
+
+        if (needsUpdate) {
+          await db.entities.CalendarEvent.update(existingEvent.id, {
+            title: ev.title,
+            description: ev.description,
+            location: ev.location,
+            status: ev.status,
+            end_time: ev.end_time,
+            tags: ev.tags,
+          });
+          updated++;
+        } else {
+          skipped++;
+        }
+      } else {
+        // New event – create
         await db.entities.CalendarEvent.create(ev);
         imported++;
       }
     }
 
-    return { success: true, imported, total: allEvents.length };
+    return { success: true, imported, updated, skipped, total: allEvents.length };
   } catch (error) {
     console.error('Google Calendar sync error:', error);
     return { success: false, error: error.message };
   }
 }
 
-// OAuth helper: get the auth URL
 export function getGoogleAuthUrl() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI || `${window.location.origin}/api/auth/google/callback`;
