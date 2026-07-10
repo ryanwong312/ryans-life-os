@@ -7,7 +7,7 @@ export const moods = [
   { value: 2, emoji: '😔', label: 'Rough', color: 'bg-orange-500' },
   { value: 3, emoji: '☹️', label: 'Low', color: 'bg-amber-500' },
   { value: 4, emoji: '😐', label: 'Okay', color: 'bg-yellow-500' },
-  { value: 5, emoji: '🙂', label: 'Good', color: 'bg-teal-500' },
+  { value: 5, emoji: '🙂', label: 'Good', color: 'bg-emerald-400' }, // changed from teal-500
   { value: 6, emoji: '😁', label: 'Great', color: 'bg-emerald-500' },
   { value: 7, emoji: '🤩', label: 'Amazing', color: 'bg-green-500' },
 ];

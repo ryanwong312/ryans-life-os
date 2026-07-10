@@ -96,12 +96,13 @@ export default function HabitCard({ habit, isCompleted, onToggle, streak = 0, cl
           )}
         </div>
 
+        {/* Streak display – now uses habit color or orange */}
         {streak > 0 && (
           <div 
             className="flex items-center gap-1"
-            style={habitColor ? { color: habitColor } : undefined}
+            style={habitColor ? { color: habitColor } : { color: '#fb923c' }}
           >
-            <Flame className={`w-4 h-4 ${!habitColor ? 'text-orange-400' : ''}`} />
+            <Flame className="w-4 h-4" />
             <span className="text-sm font-bold">{streak}</span>
           </div>
         )}
