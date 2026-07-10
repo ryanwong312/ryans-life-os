@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import { Calendar as CalendarIcon, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getGoogleAuthUrl } from '@/lib/google-calendar';
-import { useToast } from '@/components/ui/use-toast';
 
 export default function GoogleCalendarSync() {
   const [isSyncing, setIsSyncing] = useState(false);
-  const { toast } = useToast();
 
   const handleSync = () => {
     const authUrl = getGoogleAuthUrl();
@@ -19,7 +17,7 @@ export default function GoogleCalendarSync() {
       disabled={isSyncing}
       variant="outline"
       size="sm"
-      className="border-slate-600 text-slate-300 hover:bg-slate-800 gap-2"
+      className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white gap-2"
     >
       <CalendarIcon className="w-4 h-4" />
       Sync Google Calendar
