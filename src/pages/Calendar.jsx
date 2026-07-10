@@ -133,11 +133,12 @@ export default function Calendar() {
 
         {/* Action Buttons Row */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
+          {/* Today – now matching the white bg, dark text style */}
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => { setCurrentMonth(new Date()); setSelectedDate(new Date()); }} 
-            className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+            className="border-slate-300 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-900"
           >
             Today
           </Button>
@@ -150,7 +151,6 @@ export default function Calendar() {
             Add Event
           </Button>
 
-          {/* Log All Events – white bg, dark text */}
           <Button 
             variant="outline" 
             size="sm" 
@@ -160,7 +160,6 @@ export default function Calendar() {
             Log All Events
           </Button>
 
-          {/* Clean Duplicates – white bg, dark text */}
           <Button 
             variant="outline" 
             size="sm" 
@@ -171,7 +170,6 @@ export default function Calendar() {
             {cleanDuplicatesMutation.isPending ? 'Cleaning...' : 'Clean Duplicates'}
           </Button>
 
-          {/* Sync Google Calendar – white bg, dark text via className */}
           <div className="ml-auto">
             <GoogleCalendarSync className="border-slate-300 bg-white text-slate-900 hover:bg-slate-100 hover:text-slate-900" />
           </div>
